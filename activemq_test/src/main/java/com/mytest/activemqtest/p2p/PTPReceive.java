@@ -2,11 +2,8 @@ package com.mytest.activemqtest.p2p;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
-import javax.jms.Message;
 import javax.jms.MessageConsumer;
-import javax.jms.MessageListener;
 import javax.jms.Session;
-import javax.jms.TextMessage;
 
 import com.mytest.activemqtest.ConnectRes;
 
@@ -26,36 +23,6 @@ public class PTPReceive {
     private Destination destination;
     //消费者，就是接收数据的对象
     private MessageConsumer consumer;
-    static PTPReceive receive = new PTPReceive();
-    public static void main(String[] args) {
-        ExecutorService threadPool= Executors.newFixedThreadPool(3);
-        for(int i=3;i>0;i--){
-            threadPool.submit(new Runnable() {
-                @Override
-                public void run() {
-                    receive.start();
-                }
-            });
-        }
-
-//        receive.start();
-        //启动多个线程去接受消息
-        /*Thread t1=new Thread(new Runnable() {
-            @Override
-            public void run() {
-                receive.start();
-            }
-        });
-        Thread t2=new Thread(new Runnable() {
-            @Override
-            public void run() {
-                receive.start();
-            }
-        });
-
-        t1.start();
-        t2.start();*/
-    }
 
     public void start(){
         try {
@@ -75,28 +42,29 @@ public class PTPReceive {
             destination = session.createQueue("text-msg");
             //根据session，创建一个接收者对象
             consumer = session.createConsumer(destination);
-            System.out.println(Thread.currentThread().getName()+" is running");
 
             //实现一个消息的监听器
             //实现这个监听器后，以后只要有消息，就会通过这个监听器接收到
-            consumer.setMessageListener(new MessageListener() {
-                @Override
-                public void onMessage(Message message) {
-                    try {
-                        //获取到接收的数据
-                        String text = ((TextMessage)message).getText();
-                        System.out.println(Thread.currentThread().getName()+":"+text);
-                        Thread.sleep(1000*3);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            });
+            consumer.setMessageListener(new MyMsgListener(Thread.currentThread().getName()));
             //关闭接收端，也不会终止程序哦
 //            consumer.close();
 
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public static void main(String[] args) {
+        ExecutorService threadPool= Executors.newFixedThreadPool(5);
+        PTPReceive receive = new PTPReceive();
+        //每个线程要传递一个新的消费者进去执行监听,成员变量connection相同对象共享，导致多线程无法并行，无意义
+        for(int i=5;i>0;i--){
+            threadPool.submit(new ReceiverThread(new PTPReceive()));
+        }
+//       for(int i=5;i>0;i--){
+//           Thread t=new Thread(new ReceiverThread(new PTPReceive()));
+//           t.start();
+//       }
+
     }
 }
