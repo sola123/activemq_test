@@ -24,10 +24,6 @@ public class PTPSend {
     //生产者，就是产生数据的对象
     private MessageProducer producer;
 
-    public static void main(String[] args) {
-        PTPSend send = new PTPSend();
-        send.start();
-    }
 
     public void start(){
         try {
@@ -69,5 +65,11 @@ public class PTPSend {
 
     public TextMessage getMessageModel(Session session,String message) throws JMSException{
         return session.createTextMessage(message);
+    }
+
+
+    public static void main(String[] args) {
+        PTPSend send = new PTPSend();
+        send.start();
     }
 }
